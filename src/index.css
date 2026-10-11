@@ -1,0 +1,155 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;900&display=swap');
+@import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css');
+@import 'swiper/css';
+@import 'swiper/css/pagination';
+@import 'swiper/css/effect-fade';
+
+@font-face {
+  font-family: 'Abar';
+  src: url('./assets/fonts/AbarLowNoEn-Regular.woff2')
+    format('woff2');
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'Abar';
+  src: url('./assets/fonts/AbarMidFaNum-Regular.woff2')
+    format('woff2');
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'Abar';
+  src: url('./assets/fonts/AbarLowFaNum-ExtraBold.woff2')
+    format('woff2');
+  font-weight: 600;
+}
+@font-face {
+  font-family: 'Abar';
+  src: url('./assets/fonts/AbarLowNoEn-Bold.woff2')
+    format('woff2');
+  font-weight: 700;
+}
+@font-face {
+  font-family: 'Abar';
+  src: url('./assets/fonts/AbarLowFaNum-ExtraBold.woff2')
+    format('woff2');
+  font-weight: 800;
+}
+
+
+* {
+  font-family: 'Abar', sans-serif;
+}
+
+:root {
+  --primary: #63beff;
+  --primary-dark: #1D4ED8;
+  --primary-light: #EFF6FF;
+  --dark-bg: #0A1628;
+  --dark-surface: #0F1F3D;
+  --dark-border: rgba(255,255,255,0.08);
+}
+
+body {
+  direction: rtl;
+  background: #F8FAFC;
+}
+
+/* Swiper custom */
+.swiper-pagination-bullet {
+  background: rgba(255,255,255,0.5) !important;
+  width: 8px !important;
+  height: 8px !important;
+}
+.swiper-pagination-bullet-active {
+  background: white !important;
+  width: 24px !important;
+  border-radius: 4px !important;
+}
+
+.special-title::before{
+        width: 70px;
+    height: 40px;
+    background-image: url(/src/assets/images/l-chrey.png);
+    background-size: contain;
+    content: " ";
+    position: absolute;
+    right: -70px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+
+/* انیمیشن‌ها */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.fade-up { animation: fadeUp 0.4s ease forwards; }
+
+.skeleton {
+  background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+/* کارت پرواز hover */
+.flight-card:hover { transform: translateY(-2px); }
+.flight-card { transition: all 0.2s ease; }
+
+@keyframes ripple {
+  0% {
+    transform: scale(.8);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+.animate-ripple {
+  animation: ripple 2s infinite;
+}
+
+/* Persian DatePicker */
+.rmdp-wrapper {
+  direction: rtl;
+  font-family: 'Vazirmatn', sans-serif !important;
+  border-radius: 14px !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15) !important;
+  border: 1px solid #f0f0f0 !important;
+  overflow: hidden;
+}
+.rmdp-calendar { padding: 12px !important; }
+.rmdp-header-values { font-weight: 900 !important; font-size: 15px !important; color: #1f2937; }
+.rmdp-arrow-container:hover { background: #dfe2e5 !important; }
+.rmdp-arrow { border-color: #6b7280 !important; }
+.rmdp-week-day { color: #6b7280 !important; font-weight: 700 !important; font-size: 13px !important; }
+.rmdp-day span { font-size: 13px !important; font-weight: 600; }
+.rmdp-day:not(.rmdp-disabled):not(.rmdp-day-hidden) span:hover {
+  background: #4a5565 !important;
+  color: white !important;
+  border-radius: 7px !important;
+}
+
+.rmdp-selected span { background: #4a5565 !important; border-radius: 7px !important; }
+.rmdp-today span { background: #fef3c7 !important; color: #4a5565 !important; border-radius: 7px !important; }
+.rmdp-range { background: #989ea5 !important; }
+.rmdp-range-hover { background: #989ea5 !important; }
+.rmdp-range.start span, .rmdp-range.end span {
+  background: #4a5565 !important;
+  border-radius: 10px !important;
+  color: white !important;
+}
+.rmdp-day.rmdp-disabled span { color: #d1d5db !important; }
