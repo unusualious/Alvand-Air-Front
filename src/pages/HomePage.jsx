@@ -20,8 +20,8 @@ import route4 from "../assets/images/banners/traveltoisfahanbanner001.webp";
 import route5 from "../assets/images/154941061-e231b4725ef1.jpg";
 import destination1 from "../assets/images/banners/traveltoistanbulbanner001.webp";
 import destination2 from "../assets/images/banners/traveltodubaybanner001.webp";
-import destination3 from "../assets/images/banners/traveltooslobanner001.webp";
-import destination4 from "../assets/images/banners/traveltobudapestbanner001.webp";
+import destination3 from "../assets/images/banners/traveltoarmenia-2e2e2.webp";
+import destination4 from "../assets/images/banners/traveltolahur-e3.webp";
 import banner1 from "../assets/images/banners/photo-1507525428034-b723cf961d3e.jpg";
 
 import {
@@ -36,7 +36,12 @@ import {
   Search,
   Plane,
   ArrowLeft,
+  ShieldAlert,
+  FileText,
+Download,
+ExternalLink,
 } from "lucide-react";
+
 const heroSlides = [
   {
     id: 1,
@@ -107,7 +112,7 @@ const airlines = [
   { name: "الوند ایرلاین", code: "W5", color: "bg-red-50 text-red-700" },
   { name: "الوند ایرلاین", code: "IR", color: "bg-blue-50 text-blue-700" },
   { name: "قشم ایر", code: "QB", color: "bg-green-50 text-green-700" },
-  { name: "زاگرس", code: "ZV", color: "bg-purple-50 text-purple-700" },
+  { name: "زاگرس", code: "ZV", color: "bg-[#0A1628]-50 text-purple-700" },
   { name: "کیش ایر", code: "Y9", color: "bg-amber-50 text-amber-700" },
   { name: "آسمان", code: "EP", color: "bg-sky-50 text-sky-700" },
   { name: "کاسپین", code: "RV", color: "bg-teal-50 text-teal-700" },
@@ -156,10 +161,8 @@ function HomePage() {
           loop
           className="h-screen min-h-[500px] max-h-[600px]"
         >
-
           {heroSlides.map((slide) => (
             <SwiperSlide key={slide.id}>
-
               <div className={`relative h-full bg-gradient-to-br ${slide.bg}`}>
                 {/* تصویر پس‌زمینه */}
                 <img
@@ -173,30 +176,13 @@ function HomePage() {
 
                 {/* محتوا */}
                 <div className="relative h-full flex flex-col justify-center pt-16">
-
-
-                  <div className="relative z-10 mx-auto grid max-w-7xl  items-center gap-14 px-6 pt-12 pb-24 lg:grid-cols-2 lg:px-8">
+                  <div className="relative hidden sm-block z-10 mx-auto grid max-w-7xl items-center gap-14 px-6 pt-12 pb-24 lg:grid-cols-2 lg:px-8">
                     {/* Right */}
-                    <div className="w-full absolute items-center rounded-[2rem] text-slate-800 text-sm sm:text-xl font-extrabold px-5 py-6 sm:py-10 z-[60] top-6 sm:top-10 bg-white/90 backdrop-blur-md shadow-2xl border border-white/50">
-                      <h2 className="my-2 sm:my-5 leading-relaxed tracking-wider text-base sm:text-2xl font-black text-slate-900">
-                        بازدیدکننده گرامی
-                      </h2>
-
-                      <div className="leading-relaxed sm:leading-8 tracking-wide sm:tracking-widest">
-                        احتراماً؛
-                        <h3 className="font-black text-rose-900 inline-flex mx-1.5 sm:mx-3 text-base sm:text-xl">
-                          شرکت هواپیمایی الوند
-                        </h3>
-                        در حال آماده سازی زیرساخت جهت خرید بلیط توسط شما مسافر گرامی میباشد.
-                        <br />
-                        به زودی این امکان برای شما مهیا خواهد شد.
-                      </div>
-                    </div>
+          
                     <div>
                       <span className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 text-white/90 text-sm px-4 py-2 rounded-full mb-6">
                         {slide.badge}
                       </span>
-
 
                       <h1 className="text-4xl font-black text-white leading-tight lg:text-5xl">
                         {slide.title}
@@ -214,7 +200,7 @@ function HomePage() {
                       <img
                         src={route5}
                         alt=""
-                        className="relative z-10 h-[350px] rounded-[40px] object-cover shadow-2xl shadow-black/50"
+                        className="hidden sm-hidden lg-block relative z-10 h-[350px] rounded-[40px] object-cover shadow-2xl shadow-black/50"
                       />
                     </div>
                   </div>
@@ -223,14 +209,156 @@ function HomePage() {
             </SwiperSlide>
           ))}
         </Swiper>
+
+<div className="w-[80%] absolute left-1/2 -translate-x-1/2 items-center rounded-[2rem] text-slate-800 text-sm sm:text-xl font-extrabold px-5 py-6 sm:py-10 z-[60] top-6 sm:top-10 lg:top-[150px] bg-white/90 backdrop-blur-md shadow-2xl border border-white/50">
+<h2 className="my-2 sm:my-5 leading-relaxed tracking-wider text-base sm:text-2xl font-black text-slate-900">
+                        بازدیدکننده گرامی
+                      </h2>
+
+                      <div className="leading-relaxed sm:leading-8 tracking-wide sm:tracking-widest">
+                        احتراماً؛
+                        <h3 className="font-black text-rose-900 inline-flex mx-1.5 sm:mx-3 text-base sm:text-xl">
+                          شرکت هواپیمایی الوند
+                        </h3>
+                        در حال آماده سازی زیرساخت جهت خرید بلیط توسط شما مسافر گرامی میباشد.
+                        <br />
+                        به زودی این امکان برای شما مهیا خواهد شد.
+                      </div>
+                    </div>
         <div className="absolute left-1/2 bottom-[-160px] z-30 w-full max-w-7xl -translate-x-1/2 px-4">
           <SearchBox />
         </div>
       </div>
 
+      {/* بخش گزارش‌های ایمنی */}
+      <section className="pt-48 pb-6 bg-slate-50 border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="bg-white rounded-3xl p-8 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-5">
+              <div className="w-16 h-16 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                <ShieldAlert size={32} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 mb-1">
+                  گزارش‌های ایمنی پرواز
+                </h3>
+                <p className="text-slate-500 text-sm leading-relaxed max-w-2xl">
+                  تضمین ایمنی پروازها اولویت اصلی ماست. جهت مشاهده گزارش‌ها، دستورالعمل‌های ایمنی و ثبت گزارش جدید کلیک کنید.
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/safety-reports"
+              className="whitespace-nowrap inline-flex items-center gap-2 bg-[#702e37]  hover:bg-red-700 text-white font-bold px-6 py-3.5 rounded-2xl transition-colors shadow-lg shadow-red-600/20"
+            >
+              <span>ارسال گزارش‌ها</span>
+              <ArrowLeft size={18} />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+
+      {/* بخش بخشنامه‌ها */}
+      <section className="bg-white py-14 border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4">
+
+          {/* عنوان بخش */}
+          <div className="flex items-center justify-between gap-4 mb-8">
+            <div>
+              <h2 className="text-2xl font-black text-gray-900">
+                بخشنامه‌ها
+              </h2>
+              <p className="text-sm text-gray-500 mt-2">
+                دسترسی به بخشنامه‌ها و اسناد رسمی شرکت هواپیمایی الوند
+              </p>
+            </div>
+
+            <div className="hidden sm:flex w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 items-center justify-center">
+              <FileText size={28} />
+            </div>
+          </div>
+
+          {/* فهرست بخشنامه‌ها */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+            {[
+              {
+                id: 1,
+                title: "بخشنامه شماره ۱",
+                number: "001",
+                date: "۱۴۰۵/۰۷/۱۹",
+                file: "/documents/circular-001.pdf",
+              },
+              {
+                id: 2,
+                title: "بخشنامه شماره ۲",
+                number: "002",
+                date: "۱۴۰۵/۰۷/۱۹",
+                file: "/documents/circular-002.pdf",
+              },
+              {
+                id: 3,
+                title: "بخشنامه شماره ۳",
+                number: "003",
+                date: "۱۴۰۵/۰۷/۱۹",
+                file: "/documents/circular-003.pdf",
+              },
+            ].map((item) => (
+              <article
+                key={item.id}
+                className="group rounded-2xl border border-gray-200 bg-white p-5 transition-all duration-300 hover:border-amber-300 hover:shadow-lg"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 shrink-0 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
+                    <FileText size={25} />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-bold text-gray-900 leading-7">
+                      {item.title}
+                    </h3>
+
+                    <p className="text-sm text-gray-500 mt-1">
+                      شماره: {item.number}
+                    </p>
+
+                    <p className="text-xs text-gray-400 mt-2">
+                      تاریخ انتشار: {item.date}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 mt-5 pt-4 border-t border-gray-100">
+                  <a
+                    href={item.file}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-[#702e37] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#56232a]"
+                  >
+                    <ExternalLink size={16} />
+                    مشاهده PDF
+                  </a>
+
+                  <a
+                    href={item.file}
+                    download
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-3 text-sm font-bold text-gray-700 transition hover:bg-gray-50"
+                    aria-label={`دانلود ${item.title}`}
+                  >
+                    <Download size={17} />
+                    دانلود
+                  </a>
+                </div>
+              </article>
+            ))}
+
+          </div>
+        </div>
+      </section>
 
       {/* ویژگی‌ها */}
-      <section className="bg-white border-b border-gray-100 pt-56">
+      <section className="bg-white border-b border-gray-100 pt-12">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {features.map((f, i) => {
@@ -253,7 +381,6 @@ function HomePage() {
           </div>
         </div>
       </section>
-
 
       <section className="py-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -280,23 +407,21 @@ function HomePage() {
               {
                 city: "استانبول",
                 country: "ترکیه",
-                image:
-                  destination1,
+                image: destination1,
               },
               {
                 city: "دبی",
                 country: "امارات",
-                image:
-                  destination2,
+                image: destination2,
               },
               {
-                city: "اسلو",
-                country: "نروژ",
+                city: "ارمنستان",
+                country: "یروان",
                 image: destination3,
               },
               {
-                city: "بوداپست",
-                country: "مجارستان",
+                city: "پاکستان",
+                country: "لاهور",
                 image: destination4,
               },
             ].map((item) => (
@@ -329,7 +454,7 @@ function HomePage() {
       </section>
 
       <AboutUsHome />
-      <section className="mb-8 max-w-7xl mx-auto   py-14">
+      <section className="mb-8 max-w-7xl mx-auto py-14">
         <div className="flex items-center justify-between mb-8 px-10 ">
           <div>
             <h2 className="text-2xl font-black text-gray-900 special-title relative">
@@ -377,11 +502,12 @@ function HomePage() {
                 </div>
                 <div className="flex items-end justify-between">
                   <div>
-                    <p className="text-xs text-gray-400">از</p>
+                    {/* <p className="text-xs text-gray-400">از</p>
                     <p className="text-gray-600 font-bold text-base">
                       {route.price}
                     </p>
-                    <p className="text-xs text-gray-400">تومان</p>
+                    <p className="text-xs text-gray-400">تومان</p> */}
+                    <p className="text-xs text-gray-400">با الوند ایرلاین</p>
                   </div>
                   <div className="flex items-center gap-1 bg-gray-50 text-gray-600 text-xs font-bold px-2.5 py-1.5 rounded-xl group-hover:bg-[#a51c20] group-hover:text-white transition-colors">
                     <Search size={14} />
@@ -413,7 +539,7 @@ function HomePage() {
             {airlines.map((airline, i) => (
               <div
                 key={i}
-                className="bg-white rounded-xl p-3 text-center border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+                className="bg-white rounded-xl p-3 text-center border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
               >
                 <div
                   className={`w-10 h-10 rounded-xl ${airline.color} flex items-center justify-center text-xs font-black mx-auto mb-2`}
@@ -429,7 +555,7 @@ function HomePage() {
         </div>
       </section>
 
-      <section className=" py-10">
+      <section className="py-10">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="relative overflow-hidden rounded-[42px] border border-white/10 bg-gradient-to-r from-[#681f21] to-[#562a30] p-10 lg:p-16">
             <div className="absolute top-[-100px] left-[-100px] h-[250px] w-[250px] rounded-full bg-yellow-400/10 blur-[100px]" />
@@ -480,7 +606,6 @@ function HomePage() {
           </Link>
         </div>
       </section>
-
     </div>
   );
 }

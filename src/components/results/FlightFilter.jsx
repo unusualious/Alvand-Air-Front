@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import useFlightStore from '../../stores/flightStore'
+import { trackEvent } from '../../utils/analytics'
 
 function FlightFilter() {
   const { flights, filters, setFilter } = useFlightStore()
@@ -8,12 +9,44 @@ function FlightFilter() {
   // لیست ایرلاین‌های موجود از نتایج جستجو
   const airlines = [...new Set((flights || []).map(f => f.airline?.name).filter(Boolean))]
 
-  const toggleAirline = (name) => {
+  const toggleAirline = (airline) => {
     const current = filters.airlines || []
-    const updated = current.includes(name)
-      ? current.filter(a => a !== name)
-      : [...current, name]
+    const updated = current.includes(airline)
+      ? current.filter(a => a !== airline)
+      : [...current, airline]
+
     setFilter('airlines', updated)
+
+    // لاگ فیلتر ایرلاین
+    trackEvent('filter_applied', { filterType: 'airline', value: airline })
+  }
+
+  const handleTypeChange = (typeValue) => {
+    setFilter('type', typeValue)
+    trackEvent('filter_applied', { filterType: 'type', value: typeValue })
+  }
+
+  const handlePriceChange = (e) => {
+    const value = Number(e.target.value)
+    setPriceRange(value)
+    setFilter('maxPrice', value)
+    trackEvent('filter_applied', { filterType: 'maxPrice', value })
+  }
+
+  const handleTimeChange = (timeValue) => {
+    const selected = timeValue === (filters.departTime || 'all') ? 'all' : timeValue
+    setFilter('departTime', selected)
+    trackEvent('filter_applied', { filterType: 'departTime', value: selected })
+  }
+
+  const handleResetFilters = () => {
+    setFilter('type', 'all')
+    setFilter('airlines', [])
+    setFilter('maxPrice', 10000000)
+    setFilter('departTime', 'all')
+    setPriceRange(10000000)
+
+    trackEvent('filter_reset', { component: 'FlightFilter' })
   }
 
   return (
@@ -21,12 +54,7 @@ function FlightFilter() {
       <div className="flex items-center justify-between">
         <h3 className="font-black text-gray-900">فیلترها</h3>
         <button
-          onClick={() => {
-            setFilter('type', 'all')
-            setFilter('airlines', [])
-            setFilter('maxPrice', 10000000)
-            setPriceRange(10000000)
-          }}
+          onClick={handleResetFilters}
           className="text-xs text-rose-600 font-bold hover:underline">
           پاک کردن
         </button>
@@ -42,10 +70,13 @@ function FlightFilter() {
             { value: 'charter', label: 'چارتر' },
           ].map(type => (
             <label key={type.value} className="flex items-center gap-2.5 cursor-pointer group">
-              <input type="radio" name="flightType"
+              <input
+                type="radio"
+                name="flightType"
                 checked={(filters.type || 'all') === type.value}
-                onChange={() => setFilter('type', type.value)}
-                className="w-4 h-4 accent-[#e8ac21]" />
+                onChange={() => handleTypeChange(type.value)}
+                className="w-4 h-4 accent-[#e8ac21]"
+              />
               <span className="text-sm text-gray-600 group-hover:text-gray-900 transition">
                 {type.label}
               </span>
@@ -68,10 +99,7 @@ function FlightFilter() {
           max={10000000}
           step={100000}
           value={priceRange}
-          onChange={e => {
-            setPriceRange(Number(e.target.value))
-            setFilter('maxPrice', Number(e.target.value))
-          }}
+          onChange={handlePriceChange}
           className="w-full accent-[#e8ac21]"
         />
         <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -112,8 +140,9 @@ function FlightFilter() {
             { value: 'evening', label: 'عصر', icon: 'ti-sunset', time: '۱۸-۲۴' },
             { value: 'night', label: 'شب', icon: 'ti-moon', time: '۰-۶' },
           ].map(time => (
-            <button key={time.value}
-              onClick={() => setFilter('departTime', time.value === (filters.departTime || 'all') ? 'all' : time.value)}
+            <button
+              key={time.value}
+              onClick={() => handleTimeChange(time.value)}
               className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border text-xs font-bold transition ${
                 (filters.departTime || 'all') === time.value
                   ? 'border-blue-400 bg-slate-100 text-sky-600'

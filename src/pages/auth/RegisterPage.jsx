@@ -26,7 +26,8 @@ function RegisterPage() {
     setLoading(true)
     setError('')
     try {
-      await register(form.username, form.email, form.phone, form.password)
+      debugger
+      await register(form.username, form.email, form.phone, form.password,otpToken)
       navigate('/')
     } catch {
       setError('خطا در ثبت‌نام. ایمیل قبلاً استفاده شده')
@@ -79,7 +80,6 @@ function RegisterPage() {
               </div>
             ))}
 
-            {/* کامپوننت تایید شماره خارج از حلقه رندر شده است */}
             <PhoneOtpVerification phone={form.phone} purpose="Register" onVerified={setOtpToken} />
 
             <div>

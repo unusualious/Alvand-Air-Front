@@ -1,11 +1,14 @@
 import axios from 'axios'
 
+// 1. خواندن آدرس از فایل‌های .env یا استفاده از مسیر نسبی /api
+const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
+
 const api = axios.create({
-  baseURL: 'http://localhost:5106/api',
+  baseURL: baseURL,
   headers: { 'Content-Type': 'application/json' }
 })
 
-// ── Request Interceptor — access token رو اضافه کن ──
+// ── Request Interceptor — اضافه کردن access token ──
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('alvand_access_token')
   if (token) config.headers.Authorization = `Bearer ${token}`
@@ -24,15 +27,13 @@ const processQueue = (error, token = null) => {
   failedQueue = []
 }
 
-// ── Response Interceptor — اگه 401 بود refresh کن ──
+// ── Response Interceptor — اگر 401 بود refresh کن ──
 api.interceptors.response.use(
   res => res,
   async (error) => {
     const originalRequest = error.config
-
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
-        // اگه یه request دیگه در حال refresh هست، صبر کن
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject })
         }).then(token => {
@@ -43,7 +44,6 @@ api.interceptors.response.use(
 
       originalRequest._retry = true
       isRefreshing = true
-
       const refreshToken = localStorage.getItem('alvand_refresh_token')
 
       if (!refreshToken) {
@@ -55,18 +55,16 @@ api.interceptors.response.use(
       }
 
       try {
-        const res = await axios.post('http://localhost:5106/api/auth/refresh-token', {
+        // اصلاح آدرس هاردکد شده: استفاده از api (یا baseURL) به‌جای localhost:5106
+        const res = await api.post('/auth/refresh-token', {
           refreshToken
         })
-
         const { accessToken, refreshToken: newRefreshToken } = res.data
         localStorage.setItem('alvand_access_token', accessToken)
         localStorage.setItem('alvand_refresh_token', newRefreshToken)
-
         processQueue(null, accessToken)
         originalRequest.headers.Authorization = `Bearer ${accessToken}`
         return api(originalRequest)
-
       } catch (refreshError) {
         processQueue(refreshError, null)
         localStorage.removeItem('alvand_access_token')
@@ -77,7 +75,6 @@ api.interceptors.response.use(
         isRefreshing = false
       }
     }
-
     return Promise.reject(error)
   }
 )
@@ -145,5 +142,7 @@ export const otpService = {
   send: (phone, purpose = 'Register') => api.post('/otp/send', { phone, purpose }),
   verify: (phone, code, purpose = 'Register') => api.post('/otp/verify', { phone, code, purpose }),
 }
-
+export const chatService = {
+  getHistory: (visitorId) => api.get(`/chat/history/${visitorId}`),
+}
 export default api

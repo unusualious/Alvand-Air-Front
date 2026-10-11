@@ -23,26 +23,26 @@ function VoluntaryReportForm() {
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
 
-  const handleSubmit = async () => {
-    if (!form.isConfidential && form.phone && !isValidPhone(form.phone)) {
-      return setError('شماره تماس باید دقیقاً ۱۱ رقم و با 09 شروع شود')
-    }
-    if (!form.description) {
-      return setError('شرح رخداد/مخاطره الزامی است')
-    }
-
-    setError('')
-    setLoading(true)
-    try {
-      const res = await safetyFormService.createVoluntary(form)
-      trackEvent('safety_report_submitted', { kind: 'Voluntary' })
-      setResult(res.data)
-    } catch (err) {
-      setError(err.response?.data?.message || 'خطا در ثبت گزارش')
-    } finally {
-      setLoading(false)
-    }
+const handleSubmit = async () => {
+  if (!form.isConfidential && form.phone && !isValidPhone(form.phone)) {
+    return setError('شماره تماس باید دقیقاً ۱۱ رقم و با 09 شروع شود')
   }
+  if (!form.description) {
+    return setError('شرح رخداد/مخاطره الزامی است')
+  }
+
+  setError('')
+  setLoading(true)
+  try {
+    const res = await safetyFormService.createVoluntary(form)
+    setResult(res.data)
+    try { trackEvent('safety_report_submitted', { kind: 'Voluntary' }) } catch { /* آنالیتیکس نباید جلوی موفقیت رو بگیره */ }
+  } catch (err) {
+    setError(err.response?.data?.message || 'خطا در ثبت گزارش')
+  } finally {
+    setLoading(false)
+  }
+}
 
   if (result) {
     return (
@@ -130,19 +130,19 @@ function VoluntaryReportForm() {
             {/* مشخصات گزارش دهنده (در صورت عدم انتخاب حالت محرمانه) */}
             {!form.isConfidential && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100 animate-in fade-in duration-300">
-                <Field label="نام گزارش دهنده (Reporter)" icon="ti-user">
+                <Field label="نام گزارش دهنده (Reporter) - اختیاری" icon="ti-user">
                   <Input value={form.fullName} onChange={v => setForm({ ...form, fullName: v })} placeholder="نام و نام خانوادگی" />
                 </Field>
 
-                <Field label="قسمت / واحد (Div/Dept)" icon="ti-building">
+                <Field label="قسمت / واحد (Div/Dept) - اختیاری" icon="ti-building">
                   <Input value={form.dept} onChange={v => setForm({ ...form, dept: v })} placeholder="مثال: Flight Ops" />
                 </Field>
 
-                <Field label="تلفن تماس (Telephone)" icon="ti-phone">
+                <Field label="تلفن تماس (Telephone) - اختیاری " icon="ti-phone">
                   <Input value={form.phone} onChange={v => setForm({ ...form, phone: v })} placeholder="09123456789" />
                 </Field>
 
-                <Field label="آدرس الکترونیکی (Email)" icon="ti-mail">
+                <Field label="آدرس الکترونیکی (Email) - اختیاری" icon="ti-mail">
                   <Input value={form.email} onChange={v => setForm({ ...form, email: v })} placeholder="name@alvand.aero" />
                 </Field>
               </div>
@@ -188,6 +188,7 @@ function VoluntaryReportForm() {
                     setEventDateObj(d); 
                     setForm({ ...form, eventDate: toJalaliString(d) }); 
                   }} 
+                  disablePastDates={false}
                 />
               </Field>
 

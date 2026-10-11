@@ -142,6 +142,7 @@ function MandatoryReportForm() {
                     setEventDateObj(d)
                     setForm({ ...form, eventDate: toJalaliString(d) })
                   }}
+                  disablePastDates={false}
                 />
               </Field>
 

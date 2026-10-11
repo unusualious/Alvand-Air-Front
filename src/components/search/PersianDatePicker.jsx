@@ -5,7 +5,12 @@ import persian from "react-date-object/calendars/persian";
 import persian_fa from "react-date-object/locales/persian_fa";
 import DateObject from "react-date-object";
 
-function PersianDatePicker({ value, onChange, placeholder = "انتخاب تاریخ" }) {
+function PersianDatePicker({ 
+  value, 
+  onChange, 
+  placeholder = "انتخاب تاریخ", 
+  disablePastDates = true 
+}) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState("bottom"); // bottom | top
   const wrapperRef = useRef(null);
@@ -110,7 +115,7 @@ function PersianDatePicker({ value, onChange, placeholder = "انتخاب تار
             onChange={handleChange}
             calendar={persian}
             locale={persian_fa}
-             minDate={new DateObject({ calendar: persian })}
+            minDate={disablePastDates ? new DateObject({ calendar: persian }) : undefined}
             className="rmdp-prime shadow-xl rounded-2xl border border-gray-300"
             weekStartDayIndex={6}
           />

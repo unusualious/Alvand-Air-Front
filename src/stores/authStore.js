@@ -17,6 +17,7 @@ const useAuthStore = create((set) => ({
   },
 
 register: async (fullName, email, phone, password, otpVerificationToken) => {
+  debugger
   const res = await authService.register({ fullName, email, phone, password, otpVerificationToken })
   const { accessToken, refreshToken, ...user } = res.data
   localStorage.setItem('alvand_access_token', accessToken)

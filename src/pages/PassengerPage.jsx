@@ -14,7 +14,7 @@ import {
   Info,
   ArrowLeft,
 } from 'lucide-react'
-import { trackEvent } from '../utils/analytics'; 
+import { trackEvent } from '../utils/analytics'
 
 const emptyPassenger = (type) => ({
   firstName: '', lastName: '', nationalId: '',
@@ -68,6 +68,15 @@ function PassengerPage() {
   const update = (index, field, value) =>
     setForms(prev => prev.map((p, i) => i === index ? { ...p, [field]: value } : p))
 
+  const toggleAccordion = (index) => {
+    const nextIndex = expandedIndex === index ? -1 : index
+    setExpandedIndex(nextIndex)
+    
+    if (nextIndex !== -1) {
+      trackEvent('passenger_accordion_toggled', { passengerIndex: index + 1 })
+    }
+  }
+
   const validate = () => {
     const err = {}
     forms.forEach((p, i) => {
@@ -88,10 +97,25 @@ function PassengerPage() {
         const idx = parseInt(firstErr.split('_')[0])
         if (!isNaN(idx)) setExpandedIndex(idx)
       }
+
+      // لاگ ختای ولیدیشن
+      trackEvent('passenger_validation_failed', {
+        errorCount: Object.keys(errors).length,
+      })
       return
     }
-    debugger
-    trackEvent('passenger_info_submitted', { passengerCount: forms.length })
+
+    // ثبت لاگ ارسال موفق اطلاعات مسافران همراه با جزئیات کامل
+    trackEvent('passenger_info_submitted', {
+      passengerCount: forms.length,
+      adults: count.adult,
+      children: count.child,
+      infants: count.infant,
+      airlineCode: selectedFlight.airline?.code,
+      flightNumber: selectedFlight.flightNumber,
+      hasEmail: Boolean(contact.email),
+    })
+
     setPassengers(forms)
     setContactInfo(contact)
     setStep(3)
@@ -137,7 +161,7 @@ function PassengerPage() {
           {forms.map((passenger, index) => (
             <div key={index} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <button
-                onClick={() => setExpandedIndex(expandedIndex === index ? -1 : index)}
+                onClick={() => toggleAccordion(index)}
                 className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition cursor-pointer"
               >
                 <div className="w-9 h-9 bg-gray-600 rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0">
@@ -171,7 +195,7 @@ function PassengerPage() {
                 <div className="px-4 pb-4 border-t border-gray-50">
                   <div className="grid grid-cols-2 gap-3 mt-3">
                     {[
-                      { field: 'firstName', label: 'نام',           placeholder: 'علی',        err: `${index}_fn` },
+                      { field: 'firstName', label: 'نام',          placeholder: 'علی',        err: `${index}_fn` },
                       { field: 'lastName',  label: 'نام خانوادگی',  placeholder: 'محمدی',      err: `${index}_ln` },
                       { field: 'nationalId',label: 'کد ملی',        placeholder: '0012345678', err: `${index}_ni` },
                       { field: 'birthDate', label: 'تاریخ تولد',    placeholder: '1370/01/01', err: `${index}_bd` },

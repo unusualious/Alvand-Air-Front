@@ -26,6 +26,7 @@ import SafetyReportPage from './pages/SafetyReportPage';
 import MandatoryReportForm from './pages/safety/MandatoryReportForm';
 import VoluntaryReportForm from './pages/safety/VoluntaryReportForm';
 import DownloadForms from './pages/safety/DownloadForms';
+import ChatWidget from './components/chat/ChatWidget'
 
 
 function RouteTracker() {
@@ -119,8 +120,8 @@ function App() {
         <Route path="/safety-reports/mandatory" element={<MandatoryReportForm />} />
         <Route path="/safety-reports/voluntary" element={<VoluntaryReportForm />} />
         <Route path="/safety-reports/download" element={<DownloadForms />} />
-        
       </Routes>
+        <ChatWidget />
       <Footer />
     </div>
   );
