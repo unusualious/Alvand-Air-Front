@@ -17,6 +17,30 @@ const [editForm, setEditForm] = useState({
 
 const [savingProfile, setSavingProfile] = useState(false)
 
+  // تغییر رمز عبور
+  const [showPwForm, setShowPwForm] = useState(false)
+  const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' })
+  const [pwSaving, setPwSaving] = useState(false)
+  const [pwMsg, setPwMsg] = useState(null) // { type: 'ok' | 'error', text }
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault()
+    setPwMsg(null)
+    if (pwForm.next.length < 6) return setPwMsg({ type: 'error', text: 'رمز عبور جدید باید حداقل ۶ کاراکتر باشد' })
+    if (pwForm.next !== pwForm.confirm) return setPwMsg({ type: 'error', text: 'رمز جدید و تکرار آن یکسان نیستند' })
+    setPwSaving(true)
+    try {
+      await authService.changePassword(pwForm.current, pwForm.next)
+      setPwMsg({ type: 'ok', text: 'رمز عبور با موفقیت تغییر کرد' })
+      setPwForm({ current: '', next: '', confirm: '' })
+      setShowPwForm(false)
+    } catch (err) {
+      setPwMsg({ type: 'error', text: err?.response?.data?.message || 'تغییر رمز عبور انجام نشد' })
+    } finally {
+      setPwSaving(false)
+    }
+  }
+
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('trips')
   const [bookings, setBookings] = useState([])
@@ -287,12 +311,59 @@ const tabs = [
                       </div>
                     </div>
                     <button
-    onClick={() => navigate('/reset-password')}
+    onClick={() => { setShowPwForm(v => !v); setPwMsg(null) }}
     className="text-sm text-blue-600 font-bold hover:underline cursor-pointer"
 >
-    تغییر رمز
+    {showPwForm ? 'انصراف' : 'تغییر رمز'}
 </button>
                   </div>
+
+                  {pwMsg && !showPwForm && (
+                    <div className={`text-sm px-4 py-3 rounded-xl ${pwMsg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+                      {pwMsg.text}
+                    </div>
+                  )}
+
+                  {showPwForm && (
+                    <form onSubmit={handleChangePassword} className="p-4 bg-gray-50 rounded-xl space-y-3">
+                      {pwMsg && (
+                        <div className={`text-sm px-4 py-3 rounded-xl ${pwMsg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
+                          {pwMsg.text}
+                        </div>
+                      )}
+                      <input
+                        type="password"
+                        required
+                        placeholder="رمز عبور فعلی"
+                        value={pwForm.current}
+                        onChange={e => setPwForm({ ...pwForm, current: e.target.value })}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      />
+                      <input
+                        type="password"
+                        required
+                        placeholder="رمز عبور جدید (حداقل ۶ کاراکتر)"
+                        value={pwForm.next}
+                        onChange={e => setPwForm({ ...pwForm, next: e.target.value })}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      />
+                      <input
+                        type="password"
+                        required
+                        placeholder="تکرار رمز عبور جدید"
+                        value={pwForm.confirm}
+                        onChange={e => setPwForm({ ...pwForm, confirm: e.target.value })}
+                        className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      />
+                      <button
+                        type="submit"
+                        disabled={pwSaving}
+                        className="bg-blue-600 text-white font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-blue-700 transition disabled:opacity-60 cursor-pointer"
+                      >
+                        {pwSaving ? 'در حال ذخیره...' : 'ذخیره رمز جدید'}
+                      </button>
+                    </form>
+                  )}
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">

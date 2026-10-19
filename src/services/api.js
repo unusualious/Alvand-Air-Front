@@ -86,6 +86,7 @@ export const authService = {
   revokeToken: (refreshToken) => api.post('/auth/revoke-token', { refreshToken }),
   getMe: () => api.get('/auth/me'),
   updateProfile: (dto) => api.put('/auth/me', dto),
+  changePassword: (currentPassword, newPassword) => api.post('/auth/change-password', { currentPassword, newPassword }),
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
   resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, newPassword }),
 }

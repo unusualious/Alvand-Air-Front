@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useChatConnection } from '../../hooks/useChatConnection'
 import { chatService } from '../../services/api'
+import useAuthStore from '../../stores/authStore'
 
 const VISITOR_KEY = 'alv_visitor_id'
 function getVisitorId() {
@@ -27,7 +28,8 @@ function ChatWidget() {
   const [history, setHistory] = useState([])
   const [historyLoaded, setHistoryLoaded] = useState(false)
 
-  const { connected, messages, status, sendMessage } = useChatConnection(mode === 'live' ? visitorId : null)
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn)
+  const { connected, messages, status, sendMessage } = useChatConnection(mode === 'live' ? visitorId : null, isLoggedIn)
 
   useEffect(() => {
     if (!open || historyLoaded) return

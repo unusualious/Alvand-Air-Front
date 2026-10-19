@@ -109,7 +109,6 @@ function Navbar() {
                 onClick={() => setProfileOpen(!profileOpen)}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/10 transition"
               >
-                {user?.fullName}
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-800 to-yellow-800 flex items-center justify-center text-white font-bold text-sm">
                   {user?.fullName?.[0]?.toUpperCase()}
                 </div>
@@ -124,7 +123,7 @@ function Navbar() {
               </button>
 
               {profileOpen && (
-                <div className="absolute left-0 top-12 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50">
+                <div className="absolute left-0 top-12 w-56 bg-white rounded-2xl border border-gray-300 border-t-0 shadow-2xl py-2 z-50">
                   <div className="px-4 py-3 border-b border-gray-50">
                     <p className="font-bold text-gray-900 text-sm">
                       {user?.username}

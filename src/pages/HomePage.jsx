@@ -38,8 +38,8 @@ import {
   ArrowLeft,
   ShieldAlert,
   FileText,
-Download,
-ExternalLink,
+  Download,
+  ExternalLink,
 } from "lucide-react";
 
 const heroSlides = [
@@ -178,7 +178,7 @@ function HomePage() {
                 <div className="relative h-full flex flex-col justify-center pt-16">
                   <div className="relative hidden sm-block z-10 mx-auto grid max-w-7xl items-center gap-14 px-6 pt-12 pb-24 lg:grid-cols-2 lg:px-8">
                     {/* Right */}
-          
+
                     <div>
                       <span className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 text-white/90 text-sm px-4 py-2 rounded-full mb-6">
                         {slide.badge}
@@ -210,21 +210,21 @@ function HomePage() {
           ))}
         </Swiper>
 
-<div className="w-[80%] absolute left-1/2 -translate-x-1/2 items-center rounded-[2rem] text-slate-800 text-sm sm:text-xl font-extrabold px-5 py-6 sm:py-10 z-[60] top-6 sm:top-10 lg:top-[150px] bg-white/90 backdrop-blur-md shadow-2xl border border-white/50">
-<h2 className="my-2 sm:my-5 leading-relaxed tracking-wider text-base sm:text-2xl font-black text-slate-900">
-                        بازدیدکننده گرامی
-                      </h2>
+        <div className="w-[80%] absolute left-1/2 -translate-x-1/2 items-center rounded-[2rem] text-slate-800 text-sm sm:text-xl font-extrabold px-5 py-6 sm:py-10 z-[60] top-6 sm:top-10 lg:top-[150px] bg-white/90 backdrop-blur-md shadow-2xl border border-white/50">
+          <h2 className="my-2 sm:my-5 leading-relaxed tracking-wider text-base sm:text-2xl font-black text-slate-900">
+            بازدیدکننده گرامی
+          </h2>
 
-                      <div className="leading-relaxed sm:leading-8 tracking-wide sm:tracking-widest">
-                        احتراماً؛
-                        <h3 className="font-black text-rose-900 inline-flex mx-1.5 sm:mx-3 text-base sm:text-xl">
-                          شرکت هواپیمایی الوند
-                        </h3>
-                        در حال آماده سازی زیرساخت جهت خرید بلیط توسط شما مسافر گرامی میباشد.
-                        <br />
-                        به زودی این امکان برای شما مهیا خواهد شد.
-                      </div>
-                    </div>
+          <div className="leading-relaxed sm:leading-8 tracking-wide sm:tracking-widest">
+            احتراماً؛
+            <h3 className="font-black text-rose-900 inline-flex mx-1.5 sm:mx-3 text-base sm:text-xl">
+              شرکت هواپیمایی الوند
+            </h3>
+            در حال آماده سازی زیرساخت جهت خرید بلیط توسط شما مسافر گرامی میباشد.
+            <br />
+            به زودی این امکان برای شما مهیا خواهد شد.
+          </div>
+        </div>
         <div className="absolute left-1/2 bottom-[-160px] z-30 w-full max-w-7xl -translate-x-1/2 px-4">
           <SearchBox />
         </div>
@@ -285,24 +285,24 @@ function HomePage() {
             {[
               {
                 id: 1,
-                title: "بخشنامه شماره ۱",
+                title: "بخشنامه بازرگانی ۱",
                 number: "001",
                 date: "۱۴۰۵/۰۷/۱۹",
-                file: "/documents/circular-001.pdf",
+                file: "/documents/Alvand_Commercial_Manual.pdf",
               },
               {
                 id: 2,
-                title: "بخشنامه شماره ۲",
+                title: "بخشنامه پاور بانک و باتری های لیتیومی",
                 number: "002",
                 date: "۱۴۰۵/۰۷/۱۹",
-                file: "/documents/circular-002.pdf",
+                file: "/documents/Alvand_Lithium_Battery_Circular.pdf",
               },
               {
                 id: 3,
-                title: "بخشنامه شماره ۳",
+                title: "بخشنامه بازرگانی 2",
                 number: "003",
                 date: "۱۴۰۵/۰۷/۱۹",
-                file: "/documents/circular-003.pdf",
+                file: "/documents/Commercial_Manual_2.pdf",
               },
             ].map((item) => (
               <article
@@ -329,7 +329,9 @@ function HomePage() {
                   </div>
                 </div>
 
+
                 <div className="flex items-center gap-3 mt-5 pt-4 border-t border-gray-100">
+
                   <a
                     href={item.file}
                     target="_blank"
@@ -339,6 +341,7 @@ function HomePage() {
                     <ExternalLink size={16} />
                     مشاهده PDF
                   </a>
+
 
                   <a
                     href={item.file}
@@ -350,6 +353,7 @@ function HomePage() {
                     دانلود
                   </a>
                 </div>
+
               </article>
             ))}
 
@@ -357,30 +361,7 @@ function HomePage() {
         </div>
       </section>
 
-      {/* ویژگی‌ها */}
-      <section className="bg-white border-b border-gray-100 pt-12">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {features.map((f, i) => {
-              const Icon = f.icon;
 
-              return (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
-                    <Icon className="text-[#e8ac21]" />
-                  </div>
-
-                  <div>
-                    <h4 className="font-bold text-gray-900 text-nd">{f.title}</h4>
-
-                    <p className="text-gray-400 text-xs mt-0.5">{f.desc}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
 
       <section className="py-24">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -449,6 +430,29 @@ function HomePage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+      <section className="bg-white border-b border-gray-100 py-12">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {features.map((f, i) => {
+              const Icon = f.icon;
+
+              return (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
+                    <Icon className="text-[#e8ac21]" />
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-gray-900 text-nd">{f.title}</h4>
+
+                    <p className="text-gray-400 text-xs mt-0.5">{f.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -582,10 +586,12 @@ function HomePage() {
                   placeholder="ایمیل خود را وارد کنید"
                   className="flex-1 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-slate-200 outline-none placeholder:text-slate-200"
                 />
-
-                <button className="rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 px-8 py-4 font-bold text-slate-900 transition hover:scale-105">
-                  عضویت
-                </button>
+          <Link
+            to="/search"
+            className="inline-flex items-center gap-2 bg-white text-gray-700 font-bold px-8 py-3.5 rounded-2xl hover:bg-blue-50 transition shadow-xl"
+          >
+            عضویت
+          </Link>
               </div>
             </div>
           </div>
