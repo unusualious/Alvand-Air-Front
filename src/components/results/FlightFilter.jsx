@@ -1,10 +1,9 @@
-import { useState } from 'react'
 import useFlightStore from '../../stores/flightStore'
 import { trackEvent } from '../../utils/analytics'
 
 function FlightFilter() {
-  const { flights, filters, setFilter } = useFlightStore()
-  const [priceRange, setPriceRange] = useState(filters.maxPrice || 10000000)
+  const { flights, filters, setFilter, priceCap } = useFlightStore()
+  const priceRange = filters.maxPrice || priceCap
 
   // لیست ایرلاین‌های موجود از نتایج جستجو
   const airlines = [...new Set((flights || []).map(f => f.airline?.name).filter(Boolean))]
@@ -21,14 +20,8 @@ function FlightFilter() {
     trackEvent('filter_applied', { filterType: 'airline', value: airline })
   }
 
-  const handleTypeChange = (typeValue) => {
-    setFilter('type', typeValue)
-    trackEvent('filter_applied', { filterType: 'type', value: typeValue })
-  }
-
   const handlePriceChange = (e) => {
     const value = Number(e.target.value)
-    setPriceRange(value)
     setFilter('maxPrice', value)
     trackEvent('filter_applied', { filterType: 'maxPrice', value })
   }
@@ -40,11 +33,9 @@ function FlightFilter() {
   }
 
   const handleResetFilters = () => {
-    setFilter('type', 'all')
     setFilter('airlines', [])
-    setFilter('maxPrice', 10000000)
+    setFilter('maxPrice', priceCap)
     setFilter('departTime', 'all')
-    setPriceRange(10000000)
 
     trackEvent('filter_reset', { component: 'FlightFilter' })
   }
@@ -60,31 +51,6 @@ function FlightFilter() {
         </button>
       </div>
 
-      {/* نوع پرواز */}
-      <div>
-        <h4 className="text-sm font-bold text-gray-700 mb-3">نوع پرواز</h4>
-        <div className="space-y-2">
-          {[
-            { value: 'all', label: 'همه' },
-            { value: 'system', label: 'سیستمی' },
-            { value: 'charter', label: 'چارتر' },
-          ].map(type => (
-            <label key={type.value} className="flex items-center gap-2.5 cursor-pointer group">
-              <input
-                type="radio"
-                name="flightType"
-                checked={(filters.type || 'all') === type.value}
-                onChange={() => handleTypeChange(type.value)}
-                className="w-4 h-4 accent-[#e8ac21]"
-              />
-              <span className="text-sm text-gray-600 group-hover:text-gray-900 transition">
-                {type.label}
-              </span>
-            </label>
-          ))}
-        </div>
-      </div>
-
       {/* حداکثر قیمت */}
       <div>
         <div className="flex items-center justify-between mb-2">
@@ -96,7 +62,7 @@ function FlightFilter() {
         <input
           type="range"
           min={500000}
-          max={10000000}
+          max={priceCap}
           step={100000}
           value={priceRange}
           onChange={handlePriceChange}
@@ -104,7 +70,7 @@ function FlightFilter() {
         />
         <div className="flex justify-between text-xs text-gray-500 mt-1">
           <span>۵۰۰,۰۰۰</span>
-          <span>۱۰,۰۰۰,۰۰۰</span>
+          <span>{priceCap.toLocaleString('fa-IR')}</span>
         </div>
       </div>
 

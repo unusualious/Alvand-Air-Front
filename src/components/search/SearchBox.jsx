@@ -5,8 +5,8 @@ import AirportInput from "./AirportInput";
 import PassengerSelect from "./PassengerSelect";
 import PersianDatePicker from "./PersianDatePicker";
 import PersianRangePicker from "./PersianRangePicker";
-import { useState } from "react";
-import { airports } from "../../data/mockFlights";
+import { useEffect, useState } from "react";
+import { loadAirports } from "../../services/airports";
 import {
   Plane,
   Repeat,
@@ -46,25 +46,27 @@ function SearchBox() {
     swapAirports,
   } = useSearchStore();
 
-  const { searchFlights, loading } = useFlightStore();
+  const { loading } = useFlightStore();
+  const [airports, setAirports] = useState([]);
+  const [lastName, setLastName] = useState("");
+
+  useEffect(() => {
+    loadAirports().then(setAirports);
+  }, []);
   const [showPassenger, setShowPassenger] = useState(false);
   const [error, setError] = useState("");
   const [pnrCode, setPnrCode] = useState("");
   const totalPassengers =
     passengers.adult + passengers.child + passengers.infant;
 
-const formatPersianDate = (date) => {
-  if (!date) return null;
-
-  return `${date.year}-${String(date.month).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`;
-};
-
   const handleSearch = async () => {
     if (tripType === "ticketInquiry") {
       if (!pnrCode.trim()) return setError("کد رزرو را وارد کنید");
+      if (!/^[A-Za-z][A-Za-z ]*$/.test(lastName.trim()))
+        return setError("نام خانوادگی مسافر را به حروف انگلیسی وارد کنید");
 
       setError("");
-      navigate(`/ticket/${pnrCode.trim()}`);
+      navigate(`/ticket/${pnrCode.trim()}?ln=${encodeURIComponent(lastName.trim())}`);
       return;
     }
 
@@ -82,19 +84,7 @@ const formatPersianDate = (date) => {
 
     setError("");
 
-    const departStr = formatPersianDate(departDate);
-
-    const returnStr = formatPersianDate(returnDate);
-
-    await searchFlights({
-      origin,
-      destination,
-      departDate: departStr,
-      returnDate: returnStr,
-      passengers,
-      tripType,
-    });
-
+    // جستجو در صفحه‌ی نتایج انجام می‌شود (تاریخ شمسی همان‌جا به میلادی تبدیل می‌شود)
     navigate("/search");
   };
   return (
@@ -283,16 +273,31 @@ const formatPersianDate = (date) => {
               value={pnrCode}
               onChange={(e) => setPnrCode(e.target.value.toUpperCase())}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="مثال: ALV123456"
-              maxLength={12}
+              placeholder="مثال: QJKGY"
+              maxLength={8}
               className="w-full border border-gray-200 rounded-2xl sm:rounded-xl px-4 py-3 text-xs sm:text-sm font-mono tracking-widest
                 focus:outline-none focus:ring-2 focus:ring-[#a51c20]/30 focus:border-[#a51c20]
                 transition placeholder:font-sans placeholder:tracking-normal uppercase"
             />
           </div>
+          <div className="flex-1">
+            <label className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-gray-500 mb-1.5 cursor-default">
+              نام خانوادگی مسافر (انگلیسی)
+            </label>
+            <input
+              type="text"
+              dir="ltr"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              placeholder="MOHAMMADI"
+              className="w-full border border-gray-200 rounded-2xl sm:rounded-xl px-4 py-3 text-xs sm:text-sm
+                focus:outline-none focus:ring-2 focus:ring-[#a51c20]/30 focus:border-[#a51c20] transition uppercase"
+            />
+          </div>
           <button
             onClick={handleSearch}
-            disabled={!pnrCode.trim()}
+            disabled={!pnrCode.trim() || !lastName.trim()}
             className="flex items-center justify-center gap-2 bg-[#a51c20] text-white font-bold text-xs sm:text-sm
               py-3 px-6 rounded-2xl sm:rounded-xl hover:bg-[#8a1518] transition shadow-lg
               disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"

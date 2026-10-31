@@ -74,36 +74,14 @@ function PaymentPage() {
 
     setError('')
 
-    // ثبت رویداد شروع اقدام به پرداخت
-    trackEvent('payment_initiated', {
-      amount: totalPrice,
-      paymentMethod: payMethod,
-      passengerCount: passengers.length,
-      flightNumber: selectedFlight.flightNumber,
-      airlineCode: selectedFlight.airline?.code,
-    })
-
+    // رویدادهای payment_initiated / payment_completed / payment_failed فقط یک‌بار و داخل bookingStore ثبت می‌شوند
+    // (قبلاً هم اینجا و هم در store ثبت می‌شدند و آمار پرداخت دوبرابر شمرده می‌شد).
     const pnr = await createBooking()
 
     if (pnr) {
-      // ثبت رویداد پرداخت موفق
-      trackEvent('payment_success', {
-        pnr,
-        amount: totalPrice,
-        paymentMethod: payMethod,
-        airlineCode: selectedFlight.airline?.code,
-      })
       navigate(`/ticket/${pnr}`)
     } else {
-      const serverError = useBookingStore.getState().error || 'پرداخت ناموفق بود. لطفاً دوباره تلاش کنید'
-      setError(serverError)
-
-      // ثبت رویداد شکست در پرداخت
-      trackEvent('payment_failed', {
-        amount: totalPrice,
-        paymentMethod: payMethod,
-        error: serverError,
-      })
+      setError(useBookingStore.getState().error || 'پرداخت ناموفق بود. لطفاً دوباره تلاش کنید')
     }
   }
 
@@ -133,12 +111,12 @@ function PaymentPage() {
                   </div>
                   <div>
                     <p className="font-bold text-gray-900">{selectedFlight.airline.name}</p>
-                    <p className="text-xs text-gray-400">{selectedFlight.flightNumber}</p>
+                    <p className="text-xs text-gray-400">پرواز {selectedFlight.flightNumber} — کلاس {selectedFlight.class}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 text-center">
                   <div>
-                    <p className="text-xl font-black text-gray-900">{selectedFlight.departure.time}</p>
+                    <p className="text-xl font-black text-gray-900">{selectedFlight.departure.time?.slice(0, 5)}</p>
                     <p className="text-xs text-gray-500">{selectedFlight.departure.city}</p>
                   </div>
                   <div className="flex flex-col items-center">
@@ -146,7 +124,7 @@ function PaymentPage() {
                     <Plane className="text-blue-400 my-1" size={16} />
                   </div>
                   <div>
-                    <p className="text-xl font-black text-gray-900">{selectedFlight.arrival.time}</p>
+                    <p className="text-xl font-black text-gray-900">{selectedFlight.arrival.time?.slice(0, 5)}</p>
                     <p className="text-xs text-gray-500">{selectedFlight.arrival.city}</p>
                   </div>
                 </div>
@@ -188,6 +166,24 @@ function PaymentPage() {
                 ))}
               </div>
             </div>
+
+            {/* قوانین استرداد (از نیرا) */}
+            {selectedFlight.refundRules?.length > 0 && (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <h3 className="font-black text-gray-900 mb-3 flex items-center gap-2">
+                  <AlertCircle className="text-amber-500" size={20} />
+                  قوانین استرداد
+                </h3>
+                <ul className="space-y-1.5 text-sm text-gray-600">
+                  {selectedFlight.refundRules.map((r, i) => (
+                    <li key={i} className="flex justify-between gap-3">
+                      <span>{r.text}</span>
+                      <span className="font-bold text-gray-800 whitespace-nowrap">{Number(r.percent).toLocaleString('fa-IR')}٪ جریمه</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* روش پرداخت */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -257,7 +253,7 @@ function PaymentPage() {
                 )}
                 <div className="flex justify-between text-gray-600">
                   <span>مالیات و عوارض</span>
-                  <span className="text-green-500 font-medium">رایگان</span>
+                  <span className="text-gray-500 font-medium">شامل قیمت بلیت</span>
                 </div>
                 <div className="border-t border-gray-100 pt-3 mt-1">
                   <div className="flex justify-between font-black text-gray-900">

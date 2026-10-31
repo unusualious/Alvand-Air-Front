@@ -15,6 +15,8 @@ import {
   ArrowLeft,
 } from 'lucide-react'
 import { trackEvent } from '../utils/analytics'
+import { isValidNationalCode, isLatinName, isValidPhone } from '../utils/validators'
+import { parseBirthDate, ageAt, faNumber } from '../utils/dates'
 
 const emptyPassenger = (type) => ({
   firstName: '', lastName: '', nationalId: '',
@@ -22,6 +24,7 @@ const emptyPassenger = (type) => ({
 })
 
 const steps = ['انتخاب پرواز', 'اطلاعات مسافران', 'پرداخت', 'بلیط']
+const typeLabelFa = { adult: 'بزرگسال', child: 'کودک', infant: 'نوزاد' }
 
 function StepBar({ current }) {
   return (
@@ -77,31 +80,50 @@ function PassengerPage() {
     }
   }
 
+  // مرز سنی طبق داکیومنت نیرا: نوزاد ≤۲ ، کودک ۲ تا ۱۲ ، بزرگسال ≥۱۲ (سن در روز پرواز)
+  const ageOk = (type, age) =>
+    type === 'adult' ? age >= 12 : type === 'child' ? age >= 2 && age <= 12 : age <= 2
+
+  const toEnDigits = (v) => String(v || '').replace(/[۰-۹]/g, d => String(d.charCodeAt(0) - 1776))
+
   const validate = () => {
     const err = {}
+    const flightDate = new Date(`${selectedFlight.departure.date}T00:00:00`)
+    const seen = new Set()
+
     forms.forEach((p, i) => {
-      if (!p.firstName) err[`${i}_fn`] = true
-      if (!p.lastName)  err[`${i}_ln`] = true
-      if (!p.nationalId || p.nationalId.length < 10) err[`${i}_ni`] = true
-      if (!p.birthDate) err[`${i}_bd`] = true
+      if (!isLatinName(p.firstName)) err[`${i}_fn`] = 'نام را به حروف انگلیسی وارد کنید'
+      if (!isLatinName(p.lastName)) err[`${i}_ln`] = 'نام خانوادگی را به حروف انگلیسی وارد کنید'
+
+      const nid = toEnDigits(p.nationalId).trim()
+      if (!isValidNationalCode(nid)) err[`${i}_ni`] = 'کد ملی معتبر نیست'
+      else if (seen.has(nid)) err[`${i}_ni`] = 'کد ملی تکراری است'
+      seen.add(nid)
+
+      const birth = parseBirthDate(p.birthDate)
+      if (!birth || birth >= flightDate) {
+        err[`${i}_bd`] = 'تاریخ تولد معتبر نیست (مثل 1370/01/15)'
+      } else {
+        const age = ageAt(birth, flightDate)
+        if (!ageOk(p.type, age))
+          err[`${i}_bd`] = `سن (${faNumber(age)} سال) با نوع مسافر (${typeLabelFa[p.type]}) سازگار نیست`
+      }
     })
-    if (!contact.phone || contact.phone.length < 10) err.phone = true
+    if (!isValidPhone(toEnDigits(contact.phone).trim())) err.phone = 'شماره موبایل معتبر وارد کنید (مثل 09123456789)'
+    if (contact.email && !/^\S+@\S+\.\S+$/.test(contact.email.trim())) err.email = 'ایمیل معتبر نیست'
     setErrors(err)
-    return Object.keys(err).length === 0
+    return err
   }
 
   const handleNext = () => {
-    if (!validate()) {
-      const firstErr = Object.keys(errors)[0]
-      if (firstErr) {
-        const idx = parseInt(firstErr.split('_')[0])
-        if (!isNaN(idx)) setExpandedIndex(idx)
-      }
+    const err = validate()
+    const keys = Object.keys(err)
+    if (keys.length > 0) {
+      const idx = keys.map(k => parseInt(k.split('_')[0])).find(n => !isNaN(n))
+      if (idx !== undefined) setExpandedIndex(idx)
 
-      // لاگ ختای ولیدیشن
-      trackEvent('passenger_validation_failed', {
-        errorCount: Object.keys(errors).length,
-      })
+      // لاگ خطای ولیدیشن
+      trackEvent('passenger_validation_failed', { errorCount: keys.length })
       return
     }
 
@@ -116,13 +138,19 @@ function PassengerPage() {
       hasEmail: Boolean(contact.email),
     })
 
-    setPassengers(forms)
-    setContactInfo(contact)
+    setPassengers(forms.map(p => ({
+      ...p,
+      firstName: p.firstName.trim(),
+      lastName: p.lastName.trim(),
+      nationalId: toEnDigits(p.nationalId).trim(),
+      birthDate: toEnDigits(p.birthDate).trim(),
+    })))
+    setContactInfo({ phone: toEnDigits(contact.phone).trim(), email: contact.email.trim() })
     setStep(3)
     navigate('/payment')
   }
 
-  const typeLabel = { adult: 'بزرگسال', child: 'کودک', infant: 'نوزاد' }
+  const typeLabel = typeLabelFa
   const typeColor = {
     adult:  'bg-gray-100 text-gray-700',
     child:  'bg-green-100 text-green-700',
@@ -146,12 +174,12 @@ function PassengerPage() {
               <span>{selectedFlight.arrival.city}</span>
             </div>
             <p className="text-xs text-gray-400 mt-0.5 truncate">
-              {selectedFlight.airline.name} — {selectedFlight.flightNumber} — {selectedFlight.departure.time} تا {selectedFlight.arrival.time}
+              {selectedFlight.airline.name} — پرواز {selectedFlight.flightNumber} — کلاس {selectedFlight.class} — {selectedFlight.departure.time?.slice(0, 5)} تا {selectedFlight.arrival.time?.slice(0, 5)}
             </p>
           </div>
           <div className="text-left flex-shrink-0">
             <p className="text-xs text-gray-400">هر نفر</p>
-            <p className="font-black text-gray-600">{selectedFlight.price.adult.toLocaleString()}</p>
+            <p className="font-black text-gray-600">{faNumber(selectedFlight.price.adult)}</p>
             <p className="text-xs text-gray-400">تومان</p>
           </div>
         </div>
@@ -195,10 +223,10 @@ function PassengerPage() {
                 <div className="px-4 pb-4 border-t border-gray-50">
                   <div className="grid grid-cols-2 gap-3 mt-3">
                     {[
-                      { field: 'firstName', label: 'نام',          placeholder: 'علی',        err: `${index}_fn` },
-                      { field: 'lastName',  label: 'نام خانوادگی',  placeholder: 'محمدی',      err: `${index}_ln` },
-                      { field: 'nationalId',label: 'کد ملی',        placeholder: '0012345678', err: `${index}_ni` },
-                      { field: 'birthDate', label: 'تاریخ تولد',    placeholder: '1370/01/01', err: `${index}_bd` },
+                      { field: 'firstName', label: 'نام (انگلیسی)',          placeholder: 'Ali',        err: `${index}_fn`, ltr: true },
+                      { field: 'lastName',  label: 'نام خانوادگی (انگلیسی)',  placeholder: 'Mohammadi',  err: `${index}_ln`, ltr: true },
+                      { field: 'nationalId',label: 'کد ملی',        placeholder: '0012345678', err: `${index}_ni`, ltr: true },
+                      { field: 'birthDate', label: 'تاریخ تولد (شمسی)',    placeholder: '1370/01/15', err: `${index}_bd`, ltr: true },
                     ].map(f => (
                       <div key={f.field}>
                         <label className="block text-xs font-bold text-gray-600 mb-1">
@@ -209,12 +237,13 @@ function PassengerPage() {
                           value={passenger[f.field]}
                           onChange={e => update(index, f.field, e.target.value)}
                           placeholder={f.placeholder}
+                          dir={f.ltr ? 'ltr' : undefined}
                           className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition ${
                             errors[f.err] ? 'border-red-300 bg-red-50' : 'border-gray-200'
                           }`}
                         />
                         {errors[f.err] && (
-                          <p className="text-xs text-red-500 mt-0.5">این فیلد الزامی است</p>
+                          <p className="text-xs text-red-500 mt-0.5">{errors[f.err]}</p>
                         )}
                       </div>
                     ))}
@@ -269,7 +298,7 @@ function PassengerPage() {
                 />
               </div>
               {errors.phone && (
-                <p className="text-xs text-red-500 mt-0.5">شماره موبایل معتبر وارد کنید</p>
+                <p className="text-xs text-red-500 mt-0.5">{errors.phone}</p>
               )}
             </div>
             <div>
@@ -280,9 +309,12 @@ function PassengerPage() {
                   value={contact.email}
                   onChange={e => setContact({ ...contact, email: e.target.value })}
                   placeholder="example@email.com"
-                  className="w-full border border-gray-200 rounded-xl pr-9 pl-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className={`w-full border rounded-xl pr-9 pl-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 ${
+                    errors.email ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                  }`}
                 />
               </div>
+              {errors.email && <p className="text-xs text-red-500 mt-0.5">{errors.email}</p>}
             </div>
           </div>
           <p className="text-xs text-gray-400 mt-3 flex items-center gap-1">

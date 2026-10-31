@@ -13,7 +13,7 @@ import {
 function SearchResultsPage() {
   const navigate = useNavigate()
   const { origin, destination, departDate,returnDate, passengers, tripType } = useSearchStore()
-  const { loading, sortBy, setSortBy, searchFlights, getFilteredAndSorted } = useFlightStore()
+  const { loading, error, sortBy, setSortBy, searchFlights, getFilteredAndSorted } = useFlightStore()
 
   const flights = getFilteredAndSorted()
 
@@ -59,10 +59,14 @@ function SearchResultsPage() {
               <div className="hidden md:flex items-center gap-2">
                 <span className="bg-gray-100 text-gray-600 text-xs px-3 py-1  font-extrabold">
   {formatDate(departDate)}
-  <span className='mx-4 font-black'>
-    -
-    </span>
-  {formatDate(returnDate)}
+  {tripType === 'roundtrip' && returnDate && (
+    <>
+      <span className='mx-4 font-black'>
+        -
+      </span>
+      {formatDate(returnDate)}
+    </>
+  )}
 </span>
 
                 <span className="bg-gray-100 text-gray-600 text-xs px-3 py-1 font-semibold">
@@ -109,7 +113,7 @@ function SearchResultsPage() {
             <div className="bg-white rounded-l border border-gray-100 shadow-sm p-4 mb-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-extrabold text-slate-600">
-                  {loading ? 'در حال جستجو...' : (
+                  {loading ? 'در حال جستجو...' : error ? 'خطا در دریافت پروازها' : (
                     <><span className="font-extrabold">{flights.length}</span> پرواز یافت شد</>
                   )}
                 </p>
@@ -151,8 +155,21 @@ function SearchResultsPage() {
               </div>
             )}
 
+            {/* خطای ارتباط با سیستم رزرواسیون */}
+            {!loading && error && (
+              <div className="bg-white rounded-l border border-red-100 p-10 text-center">
+                <i className="ti ti-plug-off text-5xl text-red-300 block mb-3" />
+                <h3 className="font-black text-gray-700 text-lg mb-2">دریافت پروازها ممکن نشد</h3>
+                <p className="text-gray-500 text-sm mb-5">{error}</p>
+                <button onClick={() => searchFlights({ origin, destination, departDate, passengers })}
+                  className="bg-gray-600 text-white font-bold px-6 py-2.5 rounded-l hover:bg-gray-700 transition cursor-pointer">
+                  تلاش مجدد
+                </button>
+              </div>
+            )}
+
             {/* نتایج */}
-            {!loading && flights.length === 0 && (
+            {!loading && !error && flights.length === 0 && (
               <div className="bg-white rounded-l border border-gray-100 p-18 text-center">
                 <i className="ti ti-plane-off text-6xl text-gray-200 block mb-4" />
                 <h3 className="font-black text-gray-700 text-xl mb-2">پروازی یافت نشد</h3>
@@ -164,7 +181,7 @@ function SearchResultsPage() {
               </div>
             )}
 
-            {!loading && (
+            {!loading && !error && (
               <div className="space-y-3">
                 {flights.map((flight, i) => (
                   <FlightCard key={flight.id} flight={flight} passengers={passengers} index={i} />

@@ -1,27 +1,101 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import useBookingStore from '../stores/bookingStore'
-import useSearchStore from '../stores/searchStore'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { bookingService } from '../services/api'
+import useAuthStore from '../stores/authStore'
+import { loadAirports, airportCityName } from '../services/airports'
+import { faNumber, formatJalali } from '../utils/dates'
+
+const STATUS = {
+  Confirmed: { label: 'بلیط صادر شده', color: 'text-green-600', bg: 'bg-green-100', icon: 'ti-circle-check' },
+  PendingPayment: { label: 'در انتظار پرداخت', color: 'text-amber-600', bg: 'bg-amber-100', icon: 'ti-clock' },
+  Reserved: { label: 'رزرو شده (بلیط هنوز صادر نشده)', color: 'text-amber-600', bg: 'bg-amber-100', icon: 'ti-clock' },
+  Cancelled: { label: 'لغو شده', color: 'text-red-600', bg: 'bg-red-100', icon: 'ti-circle-x' },
+  PaymentFailed: { label: 'پرداخت ناموفق', color: 'text-red-600', bg: 'bg-red-100', icon: 'ti-circle-x' },
+  IssueFailed: { label: 'پرداخت ثبت شد؛ صدور بلیط در حال پیگیری', color: 'text-red-600', bg: 'bg-red-100', icon: 'ti-alert-triangle' },
+  CancelPending: { label: 'لغو در حال پیگیری', color: 'text-amber-600', bg: 'bg-amber-100', icon: 'ti-clock' },
+}
+
+const typeFa = { adult: 'بزرگسال', child: 'کودک', infant: 'نوزاد', AD: 'بزرگسال', CH: 'کودک', IN: 'نوزاد', Adult: 'بزرگسال', Child: 'کودک', Infant: 'نوزاد' }
+
+// ─── نمای یکسان برای دو منبع: رزرو کاربر (دیتابیس + RT زنده) و استعلام بدون ورود (فقط RT) ───
+function fromBooking(b) {
+  return {
+    pnr: b.pnr,
+    status: b.status,
+    niraStatus: b.niraStatus,
+    origin: b.origin, destination: b.destination,
+    originName: b.originName, destName: b.destinationName,
+    date: b.flightDate, dep: b.departureTime, arr: b.arrivalTime,
+    flightNo: b.flightNumber, airline: b.airlineName, cls: b.flightClass,
+    passengers: (b.passengers || []).map(p => ({ name: `${p.firstName} ${p.lastName}`, nationalId: p.nationalId, type: p.type })),
+    tickets: (b.tickets || []).map(t => ({ passenger: t.passenger, number: t.ticketNumber })),
+    total: b.totalPrice,
+    canCancel: b.canCancel,
+  }
+}
+
+function fromLookup(d, airports) {
+  const seg = d.segments?.[0] || {}
+  const [date, time] = String(seg.departureDT || '').split(' ')
+  return {
+    pnr: d.pnr,
+    status: (d.tickets?.length || 0) > 0 ? 'Confirmed' : 'Reserved',
+    niraStatus: d.status,
+    origin: seg.origin, destination: seg.destination,
+    originName: airportCityName(airports, seg.origin), destName: airportCityName(airports, seg.destination),
+    date, dep: time, arr: '',
+    flightNo: seg.flightNo, airline: 'هواپیمایی الوند', cls: seg.flightClass,
+    passengers: (d.passengers || []).map(p => ({ name: `${p.firstName} ${p.lastName}`, type: p.ageType })),
+    tickets: (d.tickets || []).map(t => ({ passenger: t.passenger, number: t.ticketNo })),
+    total: null,
+    canCancel: false,
+  }
+}
 
 function TicketPage() {
   const { pnr } = useParams()
-  const { selectedFlight, passengers, contactInfo } = useBookingStore()
-  const { passengers: passengerCount } = useSearchStore()
-  const [fetchedBooking, setFetchedBooking] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [notFound, setNotFound] = useState(false)
+  const [params] = useSearchParams()
+  const ln = params.get('ln') || ''
+  const navigate = useNavigate()
+  const { isLoggedIn } = useAuthStore()
 
-  const hasFreshData = !!selectedFlight
+  const [vm, setVm] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [needLastName, setNeedLastName] = useState(false)
+  const [lastNameInput, setLastNameInput] = useState('')
 
   useEffect(() => {
-    if (hasFreshData) return
-    setLoading(true)
-    bookingService.getByPnr(pnr)
-      .then(res => setFetchedBooking(res.data))
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false))
-  }, [pnr, hasFreshData])
+    let cancelled = false
+    ;(async () => {
+      setLoading(true); setError(''); setNeedLastName(false)
+      try {
+        const airports = await loadAirports()
+
+        if (isLoggedIn) {
+          try {
+            const res = await bookingService.getByPnr(pnr)
+            if (!cancelled) setVm(fromBooking(res.data))
+            return
+          } catch (e) {
+            if (e.response?.status !== 404) throw e // رزرو مال این کاربر نیست → ادامه با استعلام
+          }
+        }
+
+        if (ln) {
+          const res = await bookingService.lookup(pnr, ln)
+          if (!cancelled) setVm(fromLookup(res.data, airports))
+        } else if (!cancelled) {
+          setNeedLastName(true)
+        }
+      } catch (e) {
+        if (!cancelled) setError(e.response?.data?.message || 'خطا در دریافت اطلاعات بلیط')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [pnr, ln, isLoggedIn])
 
   if (loading) {
     return (
@@ -31,43 +105,54 @@ function TicketPage() {
     )
   }
 
-  if (!hasFreshData && (notFound || !fetchedBooking)) {
+  if (needLastName) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-24 pb-10">
+        <div className="max-w-md mx-auto px-4">
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6">
+            <h2 className="font-black text-gray-900 text-lg mb-1">استعلام بلیط {pnr}</h2>
+            <p className="text-sm text-gray-500 mb-4">برای مشاهده‌ی اطلاعات، نام خانوادگی مسافر را به حروف انگلیسی وارد کنید.</p>
+            <input dir="ltr" value={lastNameInput} onChange={e => setLastNameInput(e.target.value)}
+              placeholder="MOHAMMADI"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            <button disabled={!lastNameInput.trim()}
+              onClick={() => navigate(`/ticket/${pnr}?ln=${encodeURIComponent(lastNameInput.trim())}`)}
+              className="w-full mt-3 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 cursor-pointer">
+              استعلام
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !vm) {
     return (
       <div className="min-h-screen bg-gray-50 pt-20 flex items-center justify-center">
         <div className="text-center">
           <i className="ti ti-ticket-off text-6xl text-gray-300 block mb-4" />
-          <h2 className="font-bold text-gray-700 text-xl mb-2">بلیطی یافت نشد</h2>
+          <h2 className="font-bold text-gray-700 text-xl mb-2">{error || 'بلیطی یافت نشد'}</h2>
           <Link to="/" className="text-blue-600 hover:underline">بازگشت به خانه</Link>
         </div>
       </div>
     )
   }
 
-  // ── حالت ۱: تازه از فلوی خرید اومدیم — دیتای کامل پرواز رو داریم ──
-  if (hasFreshData) {
-    const totalPrice = (
-      selectedFlight.price.adult * passengerCount.adult +
-      selectedFlight.price.child * passengerCount.child +
-      selectedFlight.price.infant * passengerCount.infant
-    )
-    return <TicketRichView pnr={pnr} flight={selectedFlight} passengers={passengers} phone={contactInfo?.phone} totalPrice={totalPrice} />
-  }
+  const st = STATUS[vm.status] || { label: vm.status, color: 'text-gray-600', bg: 'bg-gray-100', icon: 'ti-info-circle' }
+  const issued = vm.status === 'Confirmed'
 
-  // ── حالت ۲: مستقیم لینک باز شده / بعد از رفرش — فقط دیتای بوکینگ رو داریم ──
-  return <TicketSimpleView booking={fetchedBooking} />
-}
-
-function TicketRichView({ pnr, flight, passengers, phone, totalPrice }) {
   return (
     <div className="min-h-screen bg-gray-50 pt-20 pb-10">
       <div className="max-w-2xl mx-auto px-4">
-        <div className="text-center mb-8 fade-up">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i className="ti ti-check text-4xl text-green-500" />
+        {issued && (
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i className="ti ti-check text-4xl text-green-500" />
+            </div>
+            <h1 className="text-2xl font-black text-gray-900 mb-1">بلیط شما صادر شد</h1>
+            <p className="text-gray-500">کد رزرو و شماره بلیط را برای حضور در فرودگاه همراه داشته باشید</p>
           </div>
-          <h1 className="text-2xl font-black text-gray-900 mb-1">رزرو با موفقیت انجام شد!</h1>
-          <p className="text-gray-500">بلیط شما صادر شد و به زودی پیامک می‌شود</p>
-        </div>
+        )}
 
         <div className="bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100">
           <div className="bg-gradient-to-l from-blue-700 to-indigo-800 p-6 text-white">
@@ -76,21 +161,20 @@ function TicketRichView({ pnr, flight, passengers, phone, totalPrice }) {
                 <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
                   <i className="ti ti-plane text-white text-lg" />
                 </div>
-                <span className="font-black text-xl">پرواز</span>
+                <span className="font-black text-xl">{vm.airline || 'پرواز'}</span>
               </div>
               <div className="text-left">
                 <p className="text-blue-200 text-xs">کد رزرو</p>
-                <p className="font-black text-2xl tracking-widest">{pnr}</p>
+                <p className="font-black text-2xl tracking-widest">{vm.pnr}</p>
               </div>
             </div>
             <div className="flex items-center justify-between">
               <div className="text-center">
-                <p className="text-4xl font-black">{flight.departure.time}</p>
-                <p className="text-blue-200 text-sm mt-1">{flight.departure.city}</p>
-                <p className="text-blue-300 text-xs">{flight.departure.airport}</p>
+                <p className="text-4xl font-black">{vm.dep?.slice(0, 5) || '—'}</p>
+                <p className="text-blue-200 text-sm mt-1">{vm.originName}</p>
+                <p className="text-blue-300 text-xs">{vm.origin}</p>
               </div>
               <div className="flex-1 flex flex-col items-center mx-4">
-                <p className="text-blue-200 text-xs mb-2">{flight.duration}</p>
                 <div className="w-full flex items-center gap-1">
                   <div className="w-2 h-2 rounded-full border-2 border-blue-300" />
                   <div className="flex-1 border-t border-dashed border-blue-400 relative">
@@ -98,25 +182,26 @@ function TicketRichView({ pnr, flight, passengers, phone, totalPrice }) {
                   </div>
                   <div className="w-2 h-2 rounded-full bg-blue-300" />
                 </div>
-                <p className="text-blue-200 text-xs mt-2">{flight.stops === 0 ? 'بدون توقف' : `${flight.stops} توقف`}</p>
               </div>
               <div className="text-center">
-                <p className="text-4xl font-black">{flight.arrival.time}</p>
-                <p className="text-blue-200 text-sm mt-1">{flight.arrival.city}</p>
-                <p className="text-blue-300 text-xs">{flight.arrival.airport}</p>
+                <p className="text-4xl font-black">{vm.arr?.slice(0, 5) || '—'}</p>
+                <p className="text-blue-200 text-sm mt-1">{vm.destName}</p>
+                <p className="text-blue-300 text-xs">{vm.destination}</p>
               </div>
             </div>
           </div>
 
           <div className="p-6">
+            <div className={`inline-flex items-center gap-1.5 text-sm font-bold px-3 py-1.5 rounded-full mb-5 ${st.bg} ${st.color}`}>
+              <i className={`ti ${st.icon}`} />
+              {st.label}
+            </div>
+
             <div className="grid grid-cols-3 gap-4 mb-6">
               {[
-                { label: 'ایرلاین', value: flight.airline.name, icon: 'ti-building' },
-                { label: 'شماره پرواز', value: flight.flightNumber, icon: 'ti-plane' },
-                { label: 'هواپیما', value: flight.aircraft, icon: 'ti-propeller' },
-                { label: 'تاریخ', value: flight.departure.date, icon: 'ti-calendar' },
-                { label: 'ترمینال', value: `ترمینال ${flight.departure.terminal}`, icon: 'ti-map-pin' },
-                { label: 'بار مجاز', value: flight.baggage, icon: 'ti-briefcase' },
+                { label: 'شماره پرواز', value: faNumber(vm.flightNo), icon: 'ti-plane' },
+                { label: 'تاریخ پرواز', value: formatJalali(vm.date), icon: 'ti-calendar' },
+                { label: 'کلاس پروازی', value: vm.cls || '—', icon: 'ti-armchair' },
               ].map((item, i) => (
                 <div key={i} className="text-center">
                   <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center mx-auto mb-1.5">
@@ -131,105 +216,68 @@ function TicketRichView({ pnr, flight, passengers, phone, totalPrice }) {
             <div className="border-t border-gray-100 pt-4 mb-4">
               <p className="text-xs font-bold text-gray-500 mb-3">مسافران</p>
               <div className="space-y-2">
-                {passengers.map((p, i) => (
+                {vm.passengers.map((p, i) => (
                   <div key={i} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-2.5">
                     <div className="flex items-center gap-2">
                       <i className="ti ti-user text-gray-400 text-sm" />
-                      <span className="font-bold text-gray-800 text-sm">{p.firstName} {p.lastName}</span>
+                      <span className="font-bold text-gray-800 text-sm" dir="ltr">{p.name}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-gray-400">کد ملی: {p.nationalId}</span>
-                      <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-medium">
-                        {p.type === 'adult' ? 'بزرگسال' : p.type === 'child' ? 'کودک' : 'نوزاد'}
-                      </span>
+                      {p.nationalId && <span className="text-xs text-gray-400">کد ملی: {p.nationalId}</span>}
+                      {p.type && (
+                        <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-medium">
+                          {typeFa[p.type] || p.type}
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="bg-blue-50 rounded-2xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500">مبلغ پرداخت شده</p>
-                <p className="font-black text-blue-600 text-xl">{totalPrice.toLocaleString()} تومان</p>
+            {vm.tickets.length > 0 && (
+              <div className="border-t border-gray-100 pt-4 mb-4">
+                <p className="text-xs font-bold text-gray-500 mb-3">شماره بلیط</p>
+                <div className="space-y-2">
+                  {vm.tickets.map((t, i) => (
+                    <div key={i} className="flex items-center justify-between bg-green-50 rounded-xl px-4 py-2.5">
+                      <span className="text-xs text-gray-500" dir="ltr">{t.passenger || vm.passengers[i]?.name}</span>
+                      <span className="font-black text-gray-800 tracking-wider" dir="ltr">{t.number}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="flex items-center gap-1 text-green-500 text-sm font-bold">
-                <i className="ti ti-circle-check text-lg" />
-                پرداخت موفق
+            )}
+
+            {vm.total != null && (
+              <div className="bg-blue-50 rounded-2xl p-4 flex items-center justify-between">
+                <p className="text-xs text-gray-500">{issued ? 'مبلغ پرداخت‌شده' : 'مبلغ'}</p>
+                <p className="font-black text-blue-600 text-xl">{faNumber(vm.total)} تومان</p>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
         <div className="flex gap-3 mt-6">
+          <button onClick={() => window.print()}
+            className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-50 transition cursor-pointer">
+            <i className="ti ti-printer text-lg" />
+            چاپ بلیط
+          </button>
           <Link to="/" className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition shadow-sm">
             <i className="ti ti-home text-lg" />
             خانه
           </Link>
         </div>
 
-        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mt-4 flex items-start gap-3">
-          <i className="ti ti-info-circle text-amber-500 text-xl flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-bold text-amber-800 text-sm mb-1">توجه مهم</p>
+        {issued && (
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mt-4 flex items-start gap-3">
+            <i className="ti ti-info-circle text-amber-500 text-xl flex-shrink-0 mt-0.5" />
             <p className="text-amber-700 text-xs leading-relaxed">
-              لطفاً ۲ ساعت قبل از پرواز در فرودگاه حاضر باشید. کد رزرو <strong>{pnr}</strong> به شماره {phone} پیامک شد.
+              لطفاً ۲ ساعت قبل از پرواز در فرودگاه حاضر باشید. همراه داشتن کارت ملی (یا گذرنامه) الزامی است.
             </p>
           </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// نمای ساده — وقتی فقط دیتای بک‌اند رو داریم (بدون جزئیات پرواز که فقط توی فرانت موجود بود)
-function TicketSimpleView({ booking }) {
-  const statusLabel = {
-    Confirmed: { label: 'تأیید شده', color: 'text-green-500', icon: 'ti-circle-check' },
-    PendingPayment: { label: 'در انتظار پرداخت', color: 'text-amber-500', icon: 'ti-clock' },
-    Cancelled: { label: 'کنسل شده', color: 'text-red-500', icon: 'ti-circle-x' },
-    PaymentFailed: { label: 'پرداخت ناموفق', color: 'text-red-500', icon: 'ti-circle-x' },
-  }[booking.status] || { label: booking.status, color: 'text-gray-500', icon: 'ti-info-circle' }
-
-  return (
-    <div className="min-h-screen bg-gray-50 pt-20 pb-10">
-      <div className="max-w-2xl mx-auto px-4">
-        <div className="bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="text-xs text-gray-400">کد رزرو</p>
-              <p className="font-black text-2xl tracking-widest text-gray-900">{booking.pnr}</p>
-            </div>
-            <div className={`flex items-center gap-1.5 text-sm font-bold ${statusLabel.color}`}>
-              <i className={`ti ${statusLabel.icon}`} />
-              {statusLabel.label}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between bg-blue-50 rounded-xl p-4 mb-4">
-            <div className="font-bold text-gray-900">{booking.origin} ← {booking.destination}</div>
-            <div className="text-xs text-gray-500">{booking.flightNumber} — {booking.airlineName}</div>
-          </div>
-
-          <div className="space-y-2 mb-4">
-            {booking.passengers.map((p, i) => (
-              <div key={i} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-2.5">
-                <span className="font-bold text-gray-800 text-sm">{p.firstName} {p.lastName}</span>
-                <span className="text-xs text-gray-400">کد ملی: {p.nationalId}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="bg-blue-50 rounded-2xl p-4 flex items-center justify-between">
-            <p className="text-xs text-gray-500">مبلغ</p>
-            <p className="font-black text-blue-600 text-xl">{booking.totalPrice?.toLocaleString()} تومان</p>
-          </div>
-        </div>
-
-        <Link to="/" className="mt-6 flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition">
-          <i className="ti ti-home text-lg" />
-          بازگشت به خانه
-        </Link>
+        )}
       </div>
     </div>
   )

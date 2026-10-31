@@ -101,6 +101,9 @@ export const bookingService = {
   getMyBookings: () => api.get('/bookings/my'),
   getByPnr: (pnr) => api.get(`/bookings/${pnr}`),
   cancel: (pnr) => api.post(`/bookings/${pnr}/cancel`),
+  refundQuote: (pnr) => api.get(`/bookings/${pnr}/refund-quote`),
+  // استعلام بدون ورود: PNR + نام خانوادگی مسافر (لاتین)
+  lookup: (pnr, lastName) => api.get('/bookings/lookup', { params: { pnr, lastName } }),
 }
 
 export const blogService = {

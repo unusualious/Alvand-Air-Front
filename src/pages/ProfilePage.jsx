@@ -76,13 +76,26 @@ const handleSaveProfile = async () => {
   }
 }
 
+const [cancelMsg, setCancelMsg] = useState('')
+
 const handleCancelBooking = async (pnr) => {
-  if (!confirm('از کنسل کردن این رزرو مطمئنی؟')) return
+  setCancelMsg('')
   try {
-    await bookingService.cancel(pnr)
+    // ابتدا جریمه و مبلغ بازگشتی را از نیرا می‌گیریم و به کاربر نشان می‌دهیم
+    const { data: q } = await bookingService.refundQuote(pnr)
+    const text = q.free
+      ? 'این رزرو هنوز پرداخت نشده و بدون جریمه لغو می‌شود. ادامه می‌دهید؟'
+      : `جریمه‌ی لغو: ${Number(q.totalPenalty).toLocaleString('fa-IR')} تومان\nمبلغ قابل بازگشت: ${Number(q.totalRefund).toLocaleString('fa-IR')} تومان\n\nبا لغو، بلیط شما ابطال می‌شود و این عمل قابل بازگشت نیست. ادامه می‌دهید؟`
+    if (!confirm(text)) return
+
+    const { data } = await bookingService.cancel(pnr)
+    setCancelMsg(data.refundAmount != null
+      ? `رزرو لغو شد. مبلغ ${Number(data.refundAmount).toLocaleString('fa-IR')} تومان برای بازگشت ثبت شد.`
+      : 'رزرو لغو شد.')
     fetchBookings()
-  } catch {
-    // خطا رو می‌تونی نشون بدی
+  } catch (e) {
+    setCancelMsg(e.response?.data?.message || 'لغو رزرو انجام نشد. لطفاً بعداً تلاش کنید.')
+    fetchBookings()
   }
 }
 
@@ -91,6 +104,8 @@ const statusConfig = {
   'PendingPayment': { label: 'در انتظار پرداخت', color: 'bg-amber-100 text-amber-700', icon: 'ti-clock' },
   'Cancelled': { label: 'کنسل شده', color: 'bg-red-100 text-red-700', icon: 'ti-circle-x' },
   'PaymentFailed': { label: 'پرداخت ناموفق', color: 'bg-red-100 text-red-700', icon: 'ti-circle-x' },
+  'IssueFailed': { label: 'در حال پیگیری صدور', color: 'bg-red-100 text-red-700', icon: 'ti-alert-triangle' },
+  'CancelPending': { label: 'لغو در حال پیگیری', color: 'bg-amber-100 text-amber-700', icon: 'ti-clock' },
 }
 const tabs = [
   { id: 'trips', label: 'سفرهای من', icon: 'ti-ticket' },
@@ -153,6 +168,12 @@ const tabs = [
               <div>
                 <h2 className="text-lg font-black text-gray-900 mb-4">سفرهای من</h2>
 
+                {cancelMsg && (
+                  <div className="mb-4 bg-amber-50 border border-amber-100 text-amber-800 text-sm rounded-xl px-4 py-3">
+                    {cancelMsg}
+                  </div>
+                )}
+
                 {loading ? (
                   <div className="space-y-3">
                     {[1,2,3].map(i => <div key={i} className="h-28 skeleton rounded-2xl" />)}
@@ -169,7 +190,7 @@ const tabs = [
                 ) : (
                   <div className="space-y-3">
                     {bookings.map(booking => {
-                      const status = statusConfig[booking.status] || statusConfig['Pending']
+                      const status = statusConfig[booking.status] || { label: booking.status, color: 'bg-gray-100 text-gray-600', icon: 'ti-info-circle' }
                       return (
                         <div key={booking.id}
                           className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition">
@@ -180,9 +201,9 @@ const tabs = [
                               </div>
                               <div>
                                 <div className="flex items-center gap-2 font-black text-gray-900">
-                                  <span>{booking.origin}</span>
+                                  <span>{booking.originName || booking.origin}</span>
                                   <i className="ti ti-arrow-left text-blue-400 text-sm" />
-                                  <span>{booking.destination}</span>
+                                  <span>{booking.destinationName || booking.destination}</span>
                                 </div>
                                 <p className="text-xs text-gray-400 mt-0.5">
                                   {booking.airlineName} — {booking.flightNumber}
@@ -199,7 +220,7 @@ const tabs = [
                             <div className="flex items-center gap-4 text-sm text-gray-500">
                               <span className="flex items-center gap-1">
                                 <i className="ti ti-calendar text-gray-400 text-sm" />
-                                {booking.flightDate}
+                                {new Date(`${booking.flightDate}T00:00:00`).toLocaleDateString('fa-IR-u-ca-persian', { year: 'numeric', month: 'long', day: 'numeric' })} {booking.departureTime}
                               </span>
                               <span className="flex items-center gap-1">
                                 <i className="ti ti-users text-gray-400 text-sm" />
@@ -215,7 +236,7 @@ const tabs = [
                                 <i className="ti ti-eye text-sm" />
                                 مشاهده بلیط
                               </Link>
-                              {booking.status !== 'Cancelled' && (
+                              {booking.canCancel && (
   <button onClick={() => handleCancelBooking(booking.pnr)}
     className="flex items-center gap-1 bg-red-50 text-red-600 text-xs font-bold px-3 py-1.5 rounded-xl hover:bg-red-100 transition">
     <i className="ti ti-x text-sm" />
